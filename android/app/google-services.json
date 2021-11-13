@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "403743616461",
+    "project_id": "joelfindtechnician",
+    "storage_bucket": "joelfindtechnician.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:403743616461:android:cc5001ab4137ea790c6884",
+        "android_client_info": {
+          "package_name": "com.flutterthailand.joelfindtechnician"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "403743616461-c4h88c3f85hb5sbv71ee4ce2j7atb26l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.flutterthailand.joelfindtechnician",
+            "certificate_hash": "fe1bde82a087e52913fdf0cf592fefd0c56972d0"
+          }
+        },
+        {
+          "client_id": "403743616461-q8tiulj55opl6nqmobdhhh8qavl3dkop.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAN1o_SQ4F9QwC2cbw5xk_af8S0C8wCKRs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "403743616461-q8tiulj55opl6nqmobdhhh8qavl3dkop.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
