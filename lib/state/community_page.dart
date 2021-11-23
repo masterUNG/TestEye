@@ -33,6 +33,7 @@ import 'package:joelfindtechnician/models/user_model_old.dart';
 import 'package:joelfindtechnician/state/show_image_post.dart';
 import 'package:joelfindtechnician/utility/find_user_by_uid.dart';
 import 'package:joelfindtechnician/utility/my_constant.dart';
+import 'package:joelfindtechnician/utility/time_to_string.dart';
 import 'package:joelfindtechnician/widgets/show_image.dart';
 import 'package:joelfindtechnician/widgets/show_progress.dart';
 import 'package:joelfindtechnician/widgets/show_text.dart';
@@ -84,6 +85,8 @@ class _CommunityPageState extends State<CommunityPage> {
 
   List<List<List<AnswerModel>>> listOflistAnswerModels = [];
 
+  late String nameUserLogin;
+
   void buildSetup() {
     postCustomerModels.clear();
     docIdPostCustomers.clear();
@@ -132,6 +135,8 @@ class _CommunityPageState extends State<CommunityPage> {
 
     if (!userSocial!) {
       readUserProfile();
+    } else {
+      nameUserLogin = User.displayName.toString();
     }
 
     if (User.displayName != null) {
@@ -238,6 +243,7 @@ class _CommunityPageState extends State<CommunityPage> {
             setState(() {
               load = false;
               userModelOld = UserModelOld.fromMap(value.data()!);
+              nameUserLogin = userModelOld!.name;
               // print('## name user login = ${userModelOld!.name}');
             });
           });
@@ -708,7 +714,9 @@ class _CommunityPageState extends State<CommunityPage> {
                     listOflistAnswerModels[index][index2].isEmpty
                         ? SizedBox()
                         : createGroupAnswer(
-                            listOflistAnswerModels[index][index2]),
+                            listOflistAnswerModels[index][index2],
+                            index,
+                            index2),
                     TextButton(
                       onPressed: () {
                         print(
@@ -1614,22 +1622,101 @@ class _CommunityPageState extends State<CommunityPage> {
     });
   }
 
-  Widget createGroupAnswer(List<AnswerModel> answerModels) {
+  Widget createGroupAnswer(
+      List<AnswerModel> answerModels, int index, int index2) {
     List<Widget> widgets = [];
 
     for (var item in answerModels) {
-      widgets.add(
-        Container(
-          margin: EdgeInsets.only(bottom: 4),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30),
-            color: Colors.grey.shade300,
+      if (item.status == 'online') {
+        widgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 8),
+                    width: 36,
+                    height: 36,
+                    child: CircleAvatar(
+                      backgroundImage: CachedNetworkImageProvider(
+                        item.urlPost,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    margin: EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      color: Colors.grey.shade300,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ShowText(
+                            title: item.namePost,
+                            textStyle: MyConstant().h2Style(),
+                          ),
+                          ShowText(
+                              title: TimeToString(timestamp: item.timePost)
+                                  .findString()),
+                          Container(
+                            constraints: BoxConstraints(maxWidth: 150),
+                            child: ShowText(title: item.answer),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  nameUserLogin == item.namePost
+                      ? IconButton(
+                          onPressed: () async {
+                            Map<String, dynamic> map = {};
+                            map['status'] = 'offline';
+
+                            await Firebase.initializeApp().then((value) async {
+                              await FirebaseFirestore.instance
+                                  .collection('postcustomer')
+                                  .doc(docIdPostCustomers[index])
+                                  .collection('replypost')
+                                  .doc(docIdReplys[index2])
+                                  .collection('answer')
+                                  .doc('');
+                            });
+                          },
+                          icon: Icon(Icons.delete_outline),
+                        )
+                      : SizedBox(),
+                ],
+              ),
+              item.urlImage.isEmpty
+                  ? SizedBox()
+                  : Container(
+                      margin: EdgeInsets.only(left: 52),
+                      width: 150,
+                      height: 120,
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ShowImagePost(pathImage: item.urlImage),
+                          ),
+                        ),
+                        child: CachedNetworkImage(
+                          fit: BoxFit.cover,
+                          imageUrl: item.urlImage,
+                          placeholder: (context, url) => ShowProgress(),
+                        ),
+                      ),
+                    ),
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ShowText(title: item.answer),
-          ),
-        ),
-      );
+        );
+      }
     }
 
     return Padding(
