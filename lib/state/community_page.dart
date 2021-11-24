@@ -84,6 +84,9 @@ class _CommunityPageState extends State<CommunityPage> {
   List<List<String>> listDocIdReplyAnswers = [];
 
   List<List<List<AnswerModel>>> listOflistAnswerModels = [];
+  List<List<List<String>>> listOflistIdAnswers = [];
+
+  List<List<String>> myListDocIdReplyPosts = [];
 
   late String nameUserLogin;
 
@@ -101,6 +104,8 @@ class _CommunityPageState extends State<CommunityPage> {
     listAnswers.clear();
     listDocIdReplyAnswers.clear();
     listOflistAnswerModels.clear();
+    listOflistIdAnswers.clear();
+    myListDocIdReplyPosts.clear();
   }
 
   _imageFromCamera(int index) async {
@@ -716,7 +721,9 @@ class _CommunityPageState extends State<CommunityPage> {
                         : createGroupAnswer(
                             listOflistAnswerModels[index][index2],
                             index,
-                            index2),
+                            index2,
+                            listOflistIdAnswers[index][index2],
+                          ),
                     TextButton(
                       onPressed: () {
                         print(
@@ -1478,6 +1485,9 @@ class _CommunityPageState extends State<CommunityPage> {
             List<String> answers = [];
             List<String> docIdReplyAnswers = [];
             List<List<AnswerModel>> listAnswerModels = [];
+            List<List<String>> listIdAnswers = [];
+
+            List<String> myDocIdReplyPosts = [];
 
             await FirebaseFirestore.instance
                 .collection('postcustomer')
@@ -1499,10 +1509,14 @@ class _CommunityPageState extends State<CommunityPage> {
                     ReplyPostModel.fromMap(item.data());
 
                 if (replyPostModel.status != 'offline') {
+                  String myDocIdReplyPost = item.id;
+                  myDocIdReplyPosts.add(myDocIdReplyPost);
+
                   replyPostModels.add(replyPostModel);
                   docIdReplys.add(docIdReply);
 
                   List<AnswerModel> answerModels = [];
+                  List<String> idAnswers = [];
 
                   await FirebaseFirestore.instance
                       .collection('postcustomer')
@@ -1517,10 +1531,14 @@ class _CommunityPageState extends State<CommunityPage> {
                       AnswerModel answerModel =
                           AnswerModel.fromMap(item.data());
                       answerModels.add(answerModel);
+
+                      String idAnswer = item.id;
+                      idAnswers.add(idAnswer);
                     }
                   });
 
                   listAnswerModels.add(answerModels);
+                  listIdAnswers.add(idAnswers);
                 }
               }
             });
@@ -1538,6 +1556,9 @@ class _CommunityPageState extends State<CommunityPage> {
               listAnswers.add(answers);
               listDocIdReplyAnswers.add(docIdReplyAnswers);
               listOflistAnswerModels.add(listAnswerModels);
+              listOflistIdAnswers.add(listIdAnswers);
+
+              myListDocIdReplyPosts.add(myDocIdReplyPosts);
             });
             // i++;
           }
@@ -1622,10 +1643,11 @@ class _CommunityPageState extends State<CommunityPage> {
     });
   }
 
-  Widget createGroupAnswer(
-      List<AnswerModel> answerModels, int index, int index2) {
+  Widget createGroupAnswer(List<AnswerModel> answerModels, int index,
+      int index2, List<String> idAnswers) {
     List<Widget> widgets = [];
 
+    int i = 0;
     for (var item in answerModels) {
       if (item.status == 'online') {
         widgets.add(
@@ -1674,18 +1696,69 @@ class _CommunityPageState extends State<CommunityPage> {
                   nameUserLogin == item.namePost
                       ? IconButton(
                           onPressed: () async {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: ListTile(
+                                  leading: ShowImage(),
+                                  title: ShowText(title: 'Confrim Delete'),
+                                  subtitle: ShowText(title: item.answer),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: ()async {
+                                      Navigator.pop(context);
+
+                                      Timestamp timestamp = item.timePost;
+                            print('@@@ index = $index, index2 = $index2');
+                            print(
+                                '@@@ docPostcustomer ==> ${docIdPostCustomers[index]}');
+                            print(
+                                '@@@ myDocId ===>>> ${myListDocIdReplyPosts[index]}');
+                            // print(
+                            //     '@@@ docPostcustorer ==> ${docIdPostCustomers}');
+                            print(
+                                '@@@ docReplypost ==> ${myListDocIdReplyPosts[index][index2]}');
                             Map<String, dynamic> map = {};
                             map['status'] = 'offline';
 
-                            await Firebase.initializeApp().then((value) async {
-                              await FirebaseFirestore.instance
-                                  .collection('postcustomer')
-                                  .doc(docIdPostCustomers[index])
-                                  .collection('replypost')
-                                  .doc(docIdReplys[index2])
-                                  .collection('answer')
-                                  .doc('');
+                            await FirebaseFirestore.instance
+                                .collection('postcustomer')
+                                .doc(docIdPostCustomers[index])
+                                .collection('replypost')
+                                .doc(myListDocIdReplyPosts[index][index2])
+                                .collection('answer')
+                                .where('timePost', isEqualTo: timestamp)
+                                .get()
+                                .then((value) async {
+                              for (var item in value.docs) {
+                                String docAnswer = item.id;
+                                print('@@@ docAnswer ==> $docAnswer');
+
+                                await FirebaseFirestore.instance
+                                    .collection('postcustomer')
+                                    .doc(docIdPostCustomers[index])
+                                    .collection('replypost')
+                                    .doc(myListDocIdReplyPosts[index][index2])
+                                    .collection('answer')
+                                    .doc(docAnswer)
+                                    .update(map)
+                                    .then((value) => readPostCustomerData());
+                              }
                             });
+
+                                    },
+                                    child: Text('Delete'),
+                                  ),
+                                   TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text('Cancel'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            
                           },
                           icon: Icon(Icons.delete_outline),
                         )
@@ -1717,6 +1790,7 @@ class _CommunityPageState extends State<CommunityPage> {
           ),
         );
       }
+      i++;
     }
 
     return Padding(

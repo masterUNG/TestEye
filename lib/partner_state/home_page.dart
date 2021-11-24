@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:joelfindtechnician/customer_state/social_service.dart';
 import 'package:joelfindtechnician/models/user_model_old.dart';
@@ -27,10 +29,58 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   UserModelOld? userModelOld;
+
+  FirebaseMessaging? firebaseMessaging;
+
+  FlutterLocalNotificationsPlugin flutterLocalNoti =
+      FlutterLocalNotificationsPlugin();
+  AndroidInitializationSettings? androidInitializationSettings;
+
+  InitializationSettings? initializationSettings;
+
   @override
   void initState() {
     super.initState();
     findUser();
+    setupLocalNoti();
+  }
+
+  Future<void> setupLocalNoti() async {
+    androidInitializationSettings =
+        AndroidInitializationSettings('ic_launcher');
+    initializationSettings =
+        InitializationSettings(android: androidInitializationSettings);
+    await flutterLocalNoti.initialize(initializationSettings!,
+        onSelectNotification: onSelectNoti);
+  }
+
+  Future<void> onSelectNoti(String? string) async {
+    if (string != null) {
+      print('@@@@ ค่าที่ได้จาก Notification');
+    }
+  }
+
+  Future<void> findToken(String docUser) async {
+    print('@@@@ docUser ==> $docUser');
+
+    await Firebase.initializeApp().then((value) async {
+      await FirebaseMessaging.instance.getToken().then((value) async {
+        print('@@@@ token ==>> $value');
+      });
+
+      await FirebaseMessaging.onMessage.listen((event) {
+        String title = event.notification!.title.toString();
+        String message = event.notification!.body.toString();
+        print('@@@@ title = $title, message = $message');
+        alertNotification(title, message);
+      });
+
+      await FirebaseMessaging.onMessageOpenedApp.listen((event) {
+        String title = event.notification!.title.toString();
+        String message = event.notification!.body.toString();
+        print('onOpenApp @@@@ title = $title, message = $message');
+      });
+    });
   }
 
   Future<Null> findUser() async {
@@ -42,6 +92,9 @@ class _HomePageState extends State<HomePage> {
           .get()
           .then((value) {
         for (var item in value.docs) {
+          String docUser = item.id;
+          findToken(docUser);
+
           setState(() {
             userModelOld = UserModelOld.fromMap(item.data());
           });
@@ -93,7 +146,9 @@ class _HomePageState extends State<HomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => CommunityPage(userSocialbol: false,)));
+                                builder: (context) => CommunityPage(
+                                      userSocialbol: false,
+                                    )));
                       },
                       child: Row(
                         children: [
@@ -481,5 +536,28 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  Future<void> alertNotification(String title, String message) async {
+    
+
+    AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(
+      'channelId',
+      'channelName',
+      priority: Priority.high,
+      importance: Importance.max,
+      ticker: 'test',
+    );
+
+    NotificationDetails notificationDetails =
+        NotificationDetails(android: androidNotificationDetails);
+
+    await flutterLocalNoti
+        .show(0, title, message, notificationDetails)
+        .then((value) {
+          print('@@@@ alertNoti Work at title ==> $title');
+          // update to firebase
+        });
   }
 }
