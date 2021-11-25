@@ -187,41 +187,7 @@ class _CreatePostState extends State<CreatePost> {
                           ? buildSubDistrict()
                           : Text('ตำบล ${subdistrict!}'),
                   buildJobType(context),
-                  Container(
-                    margin: EdgeInsets.only(top: 30),
-                    height: 50,
-                    width: 330,
-                    child: FlatButton(
-                      textColor: Colors.white,
-                      color: Colors.blueAccent,
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          if (amphur?.isEmpty ?? true) {
-                            MyDialog()
-                                .normalDialog(context, 'โปรดเลือกอำเภอ', '');
-                          } else if (subdistrict?.isEmpty ?? true) {
-                            MyDialog()
-                                .normalDialog(context, 'โปรดเลือกตำบล', '');
-                          } else if (checkChooseType()) {
-                            processPostData();
-                          } else {
-                            MyDialog().normalDialog(
-                                context, 'โปรดเลือกประเภทของงาน', '');
-                          }
-                        }
-                      },
-                      child: Text(
-                        'Post',
-                        style: GoogleFonts.lato(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
+                  newPostButton(context),
                 ],
               ),
             ),
@@ -229,6 +195,96 @@ class _CreatePostState extends State<CreatePost> {
         ),
       ),
     );
+  }
+
+  Container newPostButton(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(top: 30),
+      height: 50,
+      width: 330,
+      child: FlatButton(
+        textColor: Colors.white,
+        color: Colors.blueAccent,
+        onPressed: () {
+          if (_formKey.currentState!.validate()) {
+            if (amphur?.isEmpty ?? true) {
+              MyDialog().normalDialog(context, 'โปรดเลือกอำเภอ', '');
+            } else if (subdistrict?.isEmpty ?? true) {
+              MyDialog().normalDialog(context, 'โปรดเลือกตำบล', '');
+            } else if (checkChooseType()) {
+              processSentNotificatio();
+              // processPostData();
+
+            } else {
+              MyDialog().normalDialog(context, 'โปรดเลือกประเภทของงาน', '');
+            }
+          }
+        },
+        child: Text(
+          'Post',
+          style: GoogleFonts.lato(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+
+  Future<void> processSentNotificatio() async {
+    List<String> typeTechnics = [];
+    for (var item in typeTechnicStrings) {
+      if (item.isNotEmpty) {
+        typeTechnics.add(item);
+      }
+    }
+    print(
+        '@@@@ province ==> $province, typeTech ==> $typeTechnics, job ==> ${jobDescriptionController.text}');
+
+    for (var item in typeTechnics) {
+      String typeTechnic = item;
+      // print('@@@@ item ==>> $item');
+      await FirebaseFirestore.instance
+          .collection('user')
+          .where('province', isEqualTo: province)
+          .get()
+          .then((value) async {
+        for (var item2 in value.docs) {
+          UserModelOld userModelOld = UserModelOld.fromMap(item2.data());
+          if (checkHaveTypeTechnic(typeTechnic, userModelOld.typeTechnics)) {
+            String docIdUser = item2.id;
+            await FirebaseFirestore.instance
+                .collection('user')
+                .doc(docIdUser)
+                .collection('mytoken')
+                .doc('doctoken')
+                .get()
+                .then((value) {
+              if (value.data() != null) {
+                print('@@@@@ value tokent ==>> ${value.data()}');
+                // ยิง API
+              }
+            });
+          }
+        }
+      });
+    }
+  }
+
+  bool checkHaveTypeTechnic(String typeTechnic, List<String> typeTechnics) {
+    print('@@@@ typeTechnic ==> $typeTechnic');
+    print('@@@@ typeTechnics ==> $typeTechnics');
+    bool result = false; // true มี typeTechnic ใน typeTechnics
+    for (var item in typeTechnics) {
+      if (typeTechnic == item) {
+        result = true;
+      }
+    }
+    print('@@@@ result ==>>> $result');
+    return result;
   }
 
   Widget listImage() => SizedBox(

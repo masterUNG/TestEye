@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:joelfindtechnician/customer_state/social_service.dart';
+import 'package:joelfindtechnician/models/token_model.dart';
 import 'package:joelfindtechnician/models/user_model_old.dart';
 import 'package:joelfindtechnician/partner_state/mywallet.dart';
 import 'package:joelfindtechnician/partner_state/partner_aboutus.dart';
@@ -65,7 +66,38 @@ class _HomePageState extends State<HomePage> {
 
     await Firebase.initializeApp().then((value) async {
       await FirebaseMessaging.instance.getToken().then((value) async {
-        print('@@@@ token ==>> $value');
+        String token = value!;
+        print('@@@@ token ==>> $token');
+
+        await FirebaseFirestore.instance
+            .collection('user')
+            .doc(docUser)
+            .collection('mytoken')
+            .get()
+            .then((value) async {
+          print('@@@@ value ==>>> ${value.docs}');
+          TokenModel model = TokenModel(token);
+          Map<String, dynamic> data = model.toMap();
+          if (value.docs.isEmpty) {
+            // insert
+            await FirebaseFirestore.instance
+                .collection('user')
+                .doc(docUser)
+                .collection('mytoken')
+                .doc('doctoken')
+                .set(data)
+                .then((value) => print('@@@@ Success Insert Token'));
+          } else {
+            // update
+            await FirebaseFirestore.instance
+                .collection('user')
+                .doc(docUser)
+                .collection('mytoken')
+                .doc('doctoken')
+                .update(data)
+                .then((value) => print('@@@@ Success Update Token'));
+          }
+        });
       });
 
       await FirebaseMessaging.onMessage.listen((event) {
@@ -539,8 +571,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> alertNotification(String title, String message) async {
-    
-
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
       'channelId',
@@ -556,8 +586,8 @@ class _HomePageState extends State<HomePage> {
     await flutterLocalNoti
         .show(0, title, message, notificationDetails)
         .then((value) {
-          print('@@@@ alertNoti Work at title ==> $title');
-          // update to firebase
-        });
+      print('@@@@ alertNoti Work at title ==> $title');
+      // update to firebase
+    });
   }
 }
