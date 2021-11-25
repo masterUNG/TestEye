@@ -16,6 +16,7 @@ import 'package:joelfindtechnician/alertdialog/select_province.dart';
 import 'package:joelfindtechnician/model.dart';
 import 'package:joelfindtechnician/models/postcustomer_model.dart';
 import 'package:joelfindtechnician/models/subdistruct_model.dart';
+import 'package:joelfindtechnician/models/token_model.dart';
 import 'package:joelfindtechnician/models/typetechnic_model.dart';
 import 'package:joelfindtechnician/models/user_model_old.dart';
 import 'package:joelfindtechnician/utility/my_constant.dart';
@@ -262,10 +263,20 @@ class _CreatePostState extends State<CreatePost> {
                 .collection('mytoken')
                 .doc('doctoken')
                 .get()
-                .then((value) {
+                .then((value) async {
               if (value.data() != null) {
                 print('@@@@@ value tokent ==>> ${value.data()}');
                 // ยิง API
+                TokenModel model = TokenModel.fromMap(value.data()!);
+                String token = model.token;
+                String title = 'หาช่าง $province';
+                String body = jobDescriptionController.text;
+                String apiSentNotification =
+                    'https://www.androidthai.in.th/eye/apiNotification.php?isAdd=true&token=$token&title=$title&body=$body';
+
+                await Dio()
+                    .get(apiSentNotification)
+                    .then((value) => print('@@@@@ success sent Noti'));
               }
             });
           }
