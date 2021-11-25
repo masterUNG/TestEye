@@ -214,7 +214,7 @@ class _CreatePostState extends State<CreatePost> {
               MyDialog().normalDialog(context, 'โปรดเลือกตำบล', '');
             } else if (checkChooseType()) {
               processSentNotificatio();
-              // processPostData();
+              processPostData();
 
             } else {
               MyDialog().normalDialog(context, 'โปรดเลือกประเภทของงาน', '');

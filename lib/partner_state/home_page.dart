@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:joelfindtechnician/customer_state/social_service.dart';
+import 'package:joelfindtechnician/models/notification_model.dart';
 import 'package:joelfindtechnician/models/token_model.dart';
 import 'package:joelfindtechnician/models/user_model_old.dart';
 import 'package:joelfindtechnician/partner_state/mywallet.dart';
@@ -29,6 +30,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  String? docUser;
   UserModelOld? userModelOld;
 
   FirebaseMessaging? firebaseMessaging;
@@ -57,7 +59,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> onSelectNoti(String? string) async {
     if (string != null) {
-      print('@@@@ ค่าที่ได้จาก Notification');
+      print('@@@@@@ ค่าที่ได้จาก Notification');
     }
   }
 
@@ -124,8 +126,8 @@ class _HomePageState extends State<HomePage> {
           .get()
           .then((value) {
         for (var item in value.docs) {
-          String docUser = item.id;
-          findToken(docUser);
+          docUser = item.id;
+          findToken(docUser!);
 
           setState(() {
             userModelOld = UserModelOld.fromMap(item.data());
@@ -256,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => PartnerNotification()));
+                                builder: (context) => PartnerNotification(docUser: docUser!,)));
                       },
                       child: Row(
                         children: [
@@ -585,9 +587,28 @@ class _HomePageState extends State<HomePage> {
 
     await flutterLocalNoti
         .show(0, title, message, notificationDetails)
-        .then((value) {
-      print('@@@@ alertNoti Work at title ==> $title');
-      // update to firebase
+        .then((value) async {
+      print('@@@@@@ ค่าที่ได้จาก Noti ==> $title');
+      //insert data to firebase
+
+      await Firebase.initializeApp().then((value) async {
+        DateTime dateTime = DateTime.now();
+        Timestamp timeNoti = Timestamp.fromDate(dateTime);
+
+        NotificationModel model = NotificationModel(
+            title: title,
+            message: message,
+            status: 'unread',
+            timeNoti: timeNoti);
+
+        await FirebaseFirestore.instance
+            .collection('user')
+            .doc(docUser)
+            .collection('mynotification')
+            .doc()
+            .set(model.toMap())
+            .then((value) => print('@@@@@@ insert Noti Success'));
+      });
     });
   }
 }

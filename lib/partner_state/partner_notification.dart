@@ -1,7 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:joelfindtechnician/customer_state/social_service.dart';
+import 'package:joelfindtechnician/models/notification_model.dart';
 import 'package:joelfindtechnician/state/community_page.dart';
 import 'package:joelfindtechnician/partner_state/home_page.dart';
 import 'package:joelfindtechnician/partner_state/mywallet.dart';
@@ -11,31 +14,65 @@ import 'package:joelfindtechnician/partner_state/partner_howtouseapp.dart';
 import 'package:joelfindtechnician/partner_state/partner_orderhistory.dart';
 import 'package:joelfindtechnician/partner_state/partner_signin.dart';
 import 'package:joelfindtechnician/partner_state/partner_termandconditon.dart';
+import 'package:joelfindtechnician/utility/my_constant.dart';
+import 'package:joelfindtechnician/utility/time_to_string.dart';
+import 'package:joelfindtechnician/widgets/show_progress.dart';
+import 'package:joelfindtechnician/widgets/show_text.dart';
 
 class PartnerNotification extends StatefulWidget {
-  final String? title, message;
-  const PartnerNotification({Key? key, this.title, this.message})
-      : super(key: key);
+  final String? docUser;
+  const PartnerNotification({Key? key, this.docUser}) : super(key: key);
 
   @override
   _PartnerNotificationState createState() => _PartnerNotificationState();
 }
 
 class _PartnerNotificationState extends State<PartnerNotification> {
-  String? title, message;
+  String? docUser;
+  bool load = true;
+  bool? haveData;
+
+  List<NotificationModel> notificationModels = [];
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    docUser = widget.docUser;
+    readAllNoti();
+  }
 
-    title = widget.title;
-    title = title ?? '';
+  Future<void> readAllNoti() async {
+    if (notificationModels.isNotEmpty) {
+      notificationModels.clear();
+    }
 
-    message = widget.message;
-    message = message ?? '';
+    await Firebase.initializeApp().then((value) async {
+      await FirebaseFirestore.instance
+          .collection('user')
+          .doc(docUser)
+          .collection('mynotification')
+          .get()
+          .then((value) {
+        print('@@@@@@ value ==>>> ${value.docs}');
 
-    print('@@@@ title ==> $title, message = $message');
+        if (value.docs.isEmpty) {
+          setState(() {
+            load = false;
+            haveData = false;
+          });
+        } else {
+          for (var item in value.docs) {
+            NotificationModel model = NotificationModel.fromMap(item.data());
+            setState(() {
+              load = false;
+              haveData = true;
+              notificationModels.add(model);
+            });
+          }
+        }
+      });
+    });
   }
 
   @override
@@ -43,45 +80,65 @@ class _PartnerNotificationState extends State<PartnerNotification> {
     final User = FirebaseAuth.instance.currentUser!;
     return Scaffold(
       appBar: newAppBar(context),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            child: CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.blue,
-            ),
-          ),
-          SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 20, 30, 0),
-                child: Text(
-                  'Name of senter',
-                  style: GoogleFonts.lato(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+      body: load
+          ? ShowProgress()
+          : haveData!
+              ? ListView.builder(
+                  itemCount: notificationModels.length,
+                  itemBuilder: (context, index) => buildContent(
+                    notificationModels[index].message,
+                    TimeToString(timestamp: notificationModels[index].timeNoti)
+                        .findString(),
+                        notificationModels[index].status,
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                  'Time',
-                  style: GoogleFonts.lato(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+                )
+              : Center(
+                  child: ShowText(
+                  title: 'ไม่มี การแจ้งเตือนเลย',
+                  textStyle: MyConstant().h1Style(),
+                )),
       endDrawer: newDrawer(context, User),
+    );
+  }
+
+  Row buildContent(String message, String dateStr, String status) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          child: CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.blue,
+          ),
+        ),
+        SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 20, 30, 0),
+              child: Container(
+                width: 200,
+                child: ShowText(
+                  title: message,
+                  textStyle: status == 'unread' ? MyConstant().h2Style() :MyConstant().h4Style(),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Text(
+                dateStr,
+                style: GoogleFonts.lato(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -158,10 +215,10 @@ class _PartnerNotificationState extends State<PartnerNotification> {
                 ),
                 title: Text('Notification'),
                 onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PartnerNotification()));
+                  // Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => PartnerNotification()));
                 },
               ),
             ),
