@@ -18,6 +18,7 @@ import 'package:joelfindtechnician/partner_state/partner_orderhistory.dart';
 import 'package:joelfindtechnician/partner_state/partner_termandconditon.dart';
 import 'package:joelfindtechnician/partner_state/partner_signin.dart';
 import 'package:joelfindtechnician/state/community_page.dart';
+import 'package:joelfindtechnician/state/show_detail_noti.dart';
 import 'package:joelfindtechnician/state/show_profile.dart';
 import 'package:joelfindtechnician/utility/my_constant.dart';
 import 'package:joelfindtechnician/widgets/show_progress.dart';
@@ -110,13 +111,17 @@ class _HomePageState extends State<HomePage> {
       await FirebaseMessaging.onMessage.listen((event) {
         String title = event.notification!.title.toString();
         String message = event.notification!.body.toString();
-        print('@@@@ title = $title, message = $message');
+        print('#28nov onMessage ทำงาน title = $title, message = $message');
+        myTitle = title;
+    myMessage = message;
         alertNotification(title, message);
       });
 
       await FirebaseMessaging.onMessageOpenedApp.listen((event) {
         String title = event.notification!.title.toString();
         String message = event.notification!.body.toString();
+        myTitle = title;
+    myMessage = message;
         processAfterClickNoti(title, message);
       });
     });
@@ -124,6 +129,15 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> processAfterClickNoti(String title, String message) async {
     print('#28nov processAfterClickNot Work ===>> $title, message = $message');
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ShowDetailNoti(
+            title: title,
+            message: message,
+            docId: docUser!, userModelOld: userModelOld!,
+          ),
+        ));
   }
 
   Future<Null> findUser() async {
@@ -584,8 +598,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> alertNotification(String title, String message) async {
-    myTitle = title;
-    myMessage = message;
+    
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
       'channelId',
