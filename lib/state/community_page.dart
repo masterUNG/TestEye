@@ -511,7 +511,7 @@ class _CommunityPageState extends State<CommunityPage> {
             Column(
               children: [
                 Container(
-                  width: 250,
+                  width: 230,
                   height: 80,
                   child: Container(
                     margin: EdgeInsets.symmetric(vertical: 16),

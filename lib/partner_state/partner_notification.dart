@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:joelfindtechnician/customer_state/social_service.dart';
 import 'package:joelfindtechnician/models/notification_model.dart';
+import 'package:joelfindtechnician/models/user_model_old.dart';
 import 'package:joelfindtechnician/state/community_page.dart';
 import 'package:joelfindtechnician/partner_state/home_page.dart';
 import 'package:joelfindtechnician/partner_state/mywallet.dart';
@@ -14,6 +15,7 @@ import 'package:joelfindtechnician/partner_state/partner_howtouseapp.dart';
 import 'package:joelfindtechnician/partner_state/partner_orderhistory.dart';
 import 'package:joelfindtechnician/partner_state/partner_signin.dart';
 import 'package:joelfindtechnician/partner_state/partner_termandconditon.dart';
+import 'package:joelfindtechnician/state/show_detail_noti.dart';
 import 'package:joelfindtechnician/utility/my_constant.dart';
 import 'package:joelfindtechnician/utility/time_to_string.dart';
 import 'package:joelfindtechnician/widgets/show_progress.dart';
@@ -21,7 +23,9 @@ import 'package:joelfindtechnician/widgets/show_text.dart';
 
 class PartnerNotification extends StatefulWidget {
   final String? docUser;
-  const PartnerNotification({Key? key, this.docUser}) : super(key: key);
+  final UserModelOld? userModelOld;
+  const PartnerNotification({Key? key, this.docUser, this.userModelOld})
+      : super(key: key);
 
   @override
   _PartnerNotificationState createState() => _PartnerNotificationState();
@@ -31,6 +35,7 @@ class _PartnerNotificationState extends State<PartnerNotification> {
   String? docUser;
   bool load = true;
   bool? haveData;
+  UserModelOld? userModelOld;
 
   List<NotificationModel> notificationModels = [];
 
@@ -39,6 +44,7 @@ class _PartnerNotificationState extends State<PartnerNotification> {
     // TODO: implement initState
     super.initState();
     docUser = widget.docUser;
+    userModelOld = widget.userModelOld;
     readAllNoti();
   }
 
@@ -52,10 +58,9 @@ class _PartnerNotificationState extends State<PartnerNotification> {
           .collection('user')
           .doc(docUser)
           .collection('mynotification')
+          .orderBy('timeNoti', descending: true)
           .get()
           .then((value) {
-        print('@@@@@@ value ==>>> ${value.docs}');
-
         if (value.docs.isEmpty) {
           setState(() {
             load = false;
@@ -89,7 +94,8 @@ class _PartnerNotificationState extends State<PartnerNotification> {
                     notificationModels[index].message,
                     TimeToString(timestamp: notificationModels[index].timeNoti)
                         .findString(),
-                        notificationModels[index].status,
+                    notificationModels[index].status,
+                    notificationModels[index].title,
                   ),
                 )
               : Center(
@@ -101,44 +107,58 @@ class _PartnerNotificationState extends State<PartnerNotification> {
     );
   }
 
-  Row buildContent(String message, String dateStr, String status) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          child: CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.blue,
+  Widget buildContent(
+      String message, String dateStr, String status, String title) {
+    return GestureDetector(
+      onTap: () {
+        print('#28nov You Click message --> $message');
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ShowDetailNoti(
+                  userModelOld: userModelOld!, title: title, message: message),
+            ));
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            child: CircleAvatar(
+              radius: 30,
+              backgroundColor: Colors.blue,
+            ),
           ),
-        ),
-        SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 20, 30, 0),
-              child: Container(
-                width: 200,
-                child: ShowText(
-                  title: message,
-                  textStyle: status == 'unread' ? MyConstant().h2Style() :MyConstant().h4Style(),
+          SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 20, 30, 0),
+                child: Container(
+                  width: 200,
+                  child: ShowText(
+                    title: message,
+                    textStyle: status == 'unread'
+                        ? MyConstant().h2Style()
+                        : MyConstant().h4Style(),
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 5),
-              child: Text(
-                dateStr,
-                style: GoogleFonts.lato(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(
+                  dateStr,
+                  style: GoogleFonts.lato(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 

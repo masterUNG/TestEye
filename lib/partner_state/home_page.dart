@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
         String message = event.notification!.body.toString();
         print('#28nov onMessage ทำงาน title = $title, message = $message');
         myTitle = title;
-    myMessage = message;
+        myMessage = message;
         alertNotification(title, message);
       });
 
@@ -121,7 +121,7 @@ class _HomePageState extends State<HomePage> {
         String title = event.notification!.title.toString();
         String message = event.notification!.body.toString();
         myTitle = title;
-    myMessage = message;
+        myMessage = message;
         processAfterClickNoti(title, message);
       });
     });
@@ -135,7 +135,7 @@ class _HomePageState extends State<HomePage> {
           builder: (context) => ShowDetailNoti(
             title: title,
             message: message,
-            docId: docUser!, userModelOld: userModelOld!,
+            userModelOld: userModelOld!,
           ),
         ));
   }
@@ -283,6 +283,7 @@ class _HomePageState extends State<HomePage> {
                             MaterialPageRoute(
                                 builder: (context) => PartnerNotification(
                                       docUser: docUser!,
+                                      userModelOld: userModelOld,
                                     )));
                       },
                       child: Row(
@@ -598,7 +599,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> alertNotification(String title, String message) async {
-    
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
       'channelId',
