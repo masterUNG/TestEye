@@ -41,6 +41,10 @@ class _HomePageState extends State<HomePage> {
 
   InitializationSettings? initializationSettings;
 
+  String? myTitle;
+
+  String? myMessage;
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +63,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> onSelectNoti(String? string) async {
     if (string != null) {
-      print('@@@@@@ ค่าที่ได้จาก Notification');
+      print('#28nov สิ่งที่ได้่จากการคลิก Notification ตอนเปิดแอพอยู่');
+      processAfterClickNoti(myTitle!, myMessage!);
     }
   }
 
@@ -112,9 +117,13 @@ class _HomePageState extends State<HomePage> {
       await FirebaseMessaging.onMessageOpenedApp.listen((event) {
         String title = event.notification!.title.toString();
         String message = event.notification!.body.toString();
-        print('onOpenApp @@@@ title = $title, message = $message');
+        processAfterClickNoti(title, message);
       });
     });
+  }
+
+  Future<void> processAfterClickNoti(String title, String message) async {
+    print('#28nov processAfterClickNot Work ===>> $title, message = $message');
   }
 
   Future<Null> findUser() async {
@@ -258,7 +267,9 @@ class _HomePageState extends State<HomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => PartnerNotification(docUser: docUser!,)));
+                                builder: (context) => PartnerNotification(
+                                      docUser: docUser!,
+                                    )));
                       },
                       child: Row(
                         children: [
@@ -573,6 +584,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> alertNotification(String title, String message) async {
+    myTitle = title;
+    myMessage = message;
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
       'channelId',
