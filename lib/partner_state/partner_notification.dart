@@ -117,7 +117,7 @@ class _PartnerNotificationState extends State<PartnerNotification> {
             MaterialPageRoute(
               builder: (context) => ShowDetailNoti(
                   userModelOld: userModelOld!, title: title, message: message),
-            ));
+            )).then((value) => readAllNoti());
       },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
