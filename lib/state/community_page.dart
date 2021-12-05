@@ -356,9 +356,12 @@ class _CommunityPageState extends State<CommunityPage> {
                       ],
                     ),
                     Divider(thickness: 2),
-
-                    buildReplyPost(index),
-                    // replyWidgets[index],
+                    userSocial!
+                        ? buildReplyPost(index)
+                        : checkPermissionType(
+                                postCustomerModels[index].typeTechnics)
+                            ? buildReplyPost(index)
+                            : SizedBox(),
                     Divider(thickness: 2),
                   ],
                 );
@@ -1524,6 +1527,7 @@ class _CommunityPageState extends State<CommunityPage> {
                       .collection('replypost')
                       .doc(docIdReply)
                       .collection('answer')
+                      .orderBy('timePost', descending: false)
                       .get()
                       .then((value) {
                     for (var item in value.docs) {
@@ -1706,59 +1710,61 @@ class _CommunityPageState extends State<CommunityPage> {
                                 ),
                                 actions: [
                                   TextButton(
-                                    onPressed: ()async {
+                                    onPressed: () async {
                                       Navigator.pop(context);
 
                                       Timestamp timestamp = item.timePost;
-                            print('@@@ index = $index, index2 = $index2');
-                            print(
-                                '@@@ docPostcustomer ==> ${docIdPostCustomers[index]}');
-                            print(
-                                '@@@ myDocId ===>>> ${myListDocIdReplyPosts[index]}');
-                            // print(
-                            //     '@@@ docPostcustorer ==> ${docIdPostCustomers}');
-                            print(
-                                '@@@ docReplypost ==> ${myListDocIdReplyPosts[index][index2]}');
-                            Map<String, dynamic> map = {};
-                            map['status'] = 'offline';
+                                      print(
+                                          '@@@ index = $index, index2 = $index2');
+                                      print(
+                                          '@@@ docPostcustomer ==> ${docIdPostCustomers[index]}');
+                                      print(
+                                          '@@@ myDocId ===>>> ${myListDocIdReplyPosts[index]}');
+                                      // print(
+                                      //     '@@@ docPostcustorer ==> ${docIdPostCustomers}');
+                                      print(
+                                          '@@@ docReplypost ==> ${myListDocIdReplyPosts[index][index2]}');
+                                      Map<String, dynamic> map = {};
+                                      map['status'] = 'offline';
 
-                            await FirebaseFirestore.instance
-                                .collection('postcustomer')
-                                .doc(docIdPostCustomers[index])
-                                .collection('replypost')
-                                .doc(myListDocIdReplyPosts[index][index2])
-                                .collection('answer')
-                                .where('timePost', isEqualTo: timestamp)
-                                .get()
-                                .then((value) async {
-                              for (var item in value.docs) {
-                                String docAnswer = item.id;
-                                print('@@@ docAnswer ==> $docAnswer');
+                                      await FirebaseFirestore.instance
+                                          .collection('postcustomer')
+                                          .doc(docIdPostCustomers[index])
+                                          .collection('replypost')
+                                          .doc(myListDocIdReplyPosts[index]
+                                              [index2])
+                                          .collection('answer')
+                                          .where('timePost',
+                                              isEqualTo: timestamp)
+                                          .get()
+                                          .then((value) async {
+                                        for (var item in value.docs) {
+                                          String docAnswer = item.id;
+                                          print('@@@ docAnswer ==> $docAnswer');
 
-                                await FirebaseFirestore.instance
-                                    .collection('postcustomer')
-                                    .doc(docIdPostCustomers[index])
-                                    .collection('replypost')
-                                    .doc(myListDocIdReplyPosts[index][index2])
-                                    .collection('answer')
-                                    .doc(docAnswer)
-                                    .update(map)
-                                    .then((value) => readPostCustomerData());
-                              }
-                            });
-
+                                          await FirebaseFirestore.instance
+                                              .collection('postcustomer')
+                                              .doc(docIdPostCustomers[index])
+                                              .collection('replypost')
+                                              .doc(myListDocIdReplyPosts[index]
+                                                  [index2])
+                                              .collection('answer')
+                                              .doc(docAnswer)
+                                              .update(map)
+                                              .then((value) =>
+                                                  readPostCustomerData());
+                                        }
+                                      });
                                     },
                                     child: Text('Delete'),
                                   ),
-                                   TextButton(
+                                  TextButton(
                                     onPressed: () => Navigator.pop(context),
                                     child: Text('Cancel'),
                                   ),
                                 ],
                               ),
                             );
-
-                            
                           },
                           icon: Icon(Icons.delete_outline),
                         )
@@ -1800,5 +1806,21 @@ class _CommunityPageState extends State<CommunityPage> {
         children: widgets,
       ),
     );
+  }
+
+  bool checkPermissionType(List<String> typeTechnicsPost) {
+    bool result = false; // true ==> Display TextFormfield
+
+    for (var typePost in typeTechnicsPost) {
+      if (typePost.isNotEmpty) {
+        for (var typeUser in userModelOld!.typeTechnics) {
+          if (typePost.trim() == typeUser.trim()) {
+            result = true;
+          }
+        }
+      }
+    }
+
+    return result;
   }
 }
