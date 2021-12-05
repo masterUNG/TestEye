@@ -356,12 +356,7 @@ class _CommunityPageState extends State<CommunityPage> {
                       ],
                     ),
                     Divider(thickness: 2),
-                    userSocial!
-                        ? buildReplyPost(index)
-                        : checkPermissionType(
-                                postCustomerModels[index].typeTechnics)
-                            ? buildReplyPost(index)
-                            : SizedBox(),
+                    buildReplyPost(index),
                     Divider(thickness: 2),
                   ],
                 );
@@ -500,145 +495,11 @@ class _CommunityPageState extends State<CommunityPage> {
   Widget buildReplyPost(int index) {
     return Column(
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: CircleAvatar(
-                backgroundImage: userSocial!
-                    ? CachedNetworkImageProvider(User.photoURL.toString())
-                    : CachedNetworkImageProvider(userModelOld!.img),
-              ),
-            ),
-            Column(
-              children: [
-                Container(
-                  width: 230,
-                  height: 80,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(vertical: 16),
-                    child: TextFormField(
-                      controller: replyControllers[index],
-                      onChanged: (value) {
-                        setState(() {
-                          showPostIcons[index] = true;
-                          if (value.isEmpty) {
-                            showPostIcons[index] = false;
-                          }
-                        });
-                      },
-                      decoration: InputDecoration(
-                        suffix: IconButton(
-                          onPressed: () async {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Center(
-                                    child: Text(
-                                      'Choose Profile Photo',
-                                      style: GoogleFonts.lato(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.purpleAccent,
-                                      ),
-                                    ),
-                                  ),
-                                  content: SingleChildScrollView(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        FlatButton.icon(
-                                          onPressed: () {
-                                            _imageFromCamera(index);
-                                            Navigator.of(context).pop();
-                                          },
-                                          icon: Icon(Icons.camera,
-                                              color: Colors.purpleAccent),
-                                          label: Text('Camera'),
-                                        ),
-                                        FlatButton.icon(
-                                          onPressed: () {
-                                            _imageFromGallery(index);
-                                            Navigator.of(context).pop();
-                                          },
-                                          icon: Icon(
-                                            Icons.image,
-                                            color: Colors.purpleAccent,
-                                          ),
-                                          label: Text('Gallery'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          icon: Icon(Icons.camera_alt_outlined),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(30),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                files[index] == null
-                    ? SizedBox()
-                    : Container(
-                        width: 250,
-                        height: 200,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Image.file(files[index]!),
-                            IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    files[index] = null;
-                                  });
-                                },
-                                icon: Icon(Icons.clear))
-                          ],
-                        ),
-                      ),
-              ],
-            ),
-            (showPostIcons[index]) || (files[index] != null)
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: IconButton(
-                      onPressed: () async {
-                        if (files[index] != null) {
-                          String nameFile =
-                              'reply$index${Random().nextInt(10000000)}.jpg';
-                          FirebaseStorage storage = FirebaseStorage.instance;
-                          Reference reference =
-                              storage.ref().child('replypost/$nameFile');
-                          UploadTask task = reference.putFile(files[index]!);
-                          await task.whenComplete(() async {
-                            await reference
-                                .getDownloadURL()
-                                .then((value) async {
-                              urlImagePostStr = value.toString();
-                              files[index] = null;
-                              await processAddReply(index);
-                            });
-                          });
-                        } else {
-                          await processAddReply(index);
-                        }
-                      },
-                      icon: Icon(Icons.send_outlined),
-                    ),
-                  )
+        userSocial!
+            ? buildNewReplyPost(index)
+            : checkPermissionType(postCustomerModels[index].typeTechnics)
+                ? buildNewReplyPost(index)
                 : SizedBox(),
-          ],
-        ),
         ListView.builder(
           shrinkWrap: true,
           physics: ScrollPhysics(),
@@ -727,16 +588,30 @@ class _CommunityPageState extends State<CommunityPage> {
                             index2,
                             listOflistIdAnswers[index][index2],
                           ),
-                    TextButton(
-                      onPressed: () {
-                        print(
-                            '### index => $index, index2 => $index2, iconAnswer ==> ${listIconAnswers[index][index2]}');
-                        setState(() {
-                          listTextFieldAnswers[index][index2] = true;
-                        });
-                      },
-                      child: ShowText(title: 'ตอบกลับ'),
-                    ),
+                    userSocial!
+                        ? TextButton(
+                            onPressed: () {
+                              print(
+                                  '### index => $index, index2 => $index2, iconAnswer ==> ${listIconAnswers[index][index2]}');
+                              setState(() {
+                                listTextFieldAnswers[index][index2] = true;
+                              });
+                            },
+                            child: ShowText(title: 'ตอบกลับ'),
+                          )
+                        : checkPermissionType(
+                                postCustomerModels[index].typeTechnics)
+                            ? TextButton(
+                                onPressed: () {
+                                  print(
+                                      '### index => $index, index2 => $index2, iconAnswer ==> ${listIconAnswers[index][index2]}');
+                                  setState(() {
+                                    listTextFieldAnswers[index][index2] = true;
+                                  });
+                                },
+                                child: ShowText(title: 'ตอบกลับ'),
+                              )
+                            : SizedBox(),
                     listTextFieldAnswers[index][index2]
                         ? Column(
                             children: [
@@ -1004,6 +879,145 @@ class _CommunityPageState extends State<CommunityPage> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget buildNewReplyPost(int index) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: CircleAvatar(
+            backgroundImage: userSocial!
+                ? CachedNetworkImageProvider(User.photoURL.toString())
+                : CachedNetworkImageProvider(userModelOld!.img),
+          ),
+        ),
+        Column(
+          children: [
+            Container(
+              width: 230,
+              height: 80,
+              child: Container(
+                margin: EdgeInsets.symmetric(vertical: 16),
+                child: TextFormField(
+                  controller: replyControllers[index],
+                  onChanged: (value) {
+                    setState(() {
+                      showPostIcons[index] = true;
+                      if (value.isEmpty) {
+                        showPostIcons[index] = false;
+                      }
+                    });
+                  },
+                  decoration: InputDecoration(
+                    suffix: IconButton(
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Center(
+                                child: Text(
+                                  'Choose Profile Photo',
+                                  style: GoogleFonts.lato(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purpleAccent,
+                                  ),
+                                ),
+                              ),
+                              content: SingleChildScrollView(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    FlatButton.icon(
+                                      onPressed: () {
+                                        _imageFromCamera(index);
+                                        Navigator.of(context).pop();
+                                      },
+                                      icon: Icon(Icons.camera,
+                                          color: Colors.purpleAccent),
+                                      label: Text('Camera'),
+                                    ),
+                                    FlatButton.icon(
+                                      onPressed: () {
+                                        _imageFromGallery(index);
+                                        Navigator.of(context).pop();
+                                      },
+                                      icon: Icon(
+                                        Icons.image,
+                                        color: Colors.purpleAccent,
+                                      ),
+                                      label: Text('Gallery'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      icon: Icon(Icons.camera_alt_outlined),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(30),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            files[index] == null
+                ? SizedBox()
+                : Container(
+                    width: 250,
+                    height: 200,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.file(files[index]!),
+                        IconButton(
+                            onPressed: () {
+                              setState(() {
+                                files[index] = null;
+                              });
+                            },
+                            icon: Icon(Icons.clear))
+                      ],
+                    ),
+                  ),
+          ],
+        ),
+        (showPostIcons[index]) || (files[index] != null)
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: IconButton(
+                  onPressed: () async {
+                    if (files[index] != null) {
+                      String nameFile =
+                          'reply$index${Random().nextInt(10000000)}.jpg';
+                      FirebaseStorage storage = FirebaseStorage.instance;
+                      Reference reference =
+                          storage.ref().child('replypost/$nameFile');
+                      UploadTask task = reference.putFile(files[index]!);
+                      await task.whenComplete(() async {
+                        await reference.getDownloadURL().then((value) async {
+                          urlImagePostStr = value.toString();
+                          files[index] = null;
+                          await processAddReply(index);
+                        });
+                      });
+                    } else {
+                      await processAddReply(index);
+                    }
+                  },
+                  icon: Icon(Icons.send_outlined),
+                ),
+              )
+            : SizedBox(),
       ],
     );
   } // end
@@ -1811,11 +1825,16 @@ class _CommunityPageState extends State<CommunityPage> {
   bool checkPermissionType(List<String> typeTechnicsPost) {
     bool result = false; // true ==> Display TextFormfield
 
-    for (var typePost in typeTechnicsPost) {
-      if (typePost.isNotEmpty) {
-        for (var typeUser in userModelOld!.typeTechnics) {
-          if (typePost.trim() == typeUser.trim()) {
-            result = true;
+    print('##5dec userModelOld.procince ==>> ${userModelOld!.province}');
+    print('##5dec privince ==> $provinceChoosed');
+
+    if (userModelOld!.province == provinceChoosed) {
+      for (var typePost in typeTechnicsPost) {
+        if (typePost.isNotEmpty) {
+          for (var typeUser in userModelOld!.typeTechnics) {
+            if (typePost.trim() == typeUser.trim()) {
+              result = true;
+            }
           }
         }
       }
